@@ -1,90 +1,179 @@
-import { fetch } from 'undici';
-import * as cheerio from 'cheerio';
-import { describe, expect, it } from 'vitest';
-
-type Movie = {
-    title: string,
-    url: string;
-}
-const retrieveFilmographyFromId = async (alloId: string) => {
-    const url = `https://www.allocine.fr/personne/fichepersonne-${alloId}/filmographie/`;
-    const response = await fetch(url);
-    const rawContent = await response.text();
-    const $ = cheerio.load(rawContent);
-    const nodes = $('td a');
-    console.log(nodes.length);
-    const result: Movie[] = []
-    for (let index = 0; index < nodes.length; index++) {
-        const element = nodes[index];
-        result.push({title: element.attribs.title, url: element.attribs.href})
-    }
-   
-    return result;
-}
-
-const retrieveCastingFromId = async (movieId: string) => {
-    const url = `https://www.allocine.fr/film/fichefilm-${movieId}/casting/`;
-    const response = await fetch(url);
-    const rawContent = await response.text();
-    const $ = cheerio.load(rawContent);
-    const nodes = $('a.meta-title-link');
-   
-    const result: string[] = []
-    for (let index = 0; index < nodes.length; index++) {
-        const element = nodes[index];
-        result.push(element.attribs.href);
-    }
-    return result;
-}
-
-const retrieveNameFromActorUrl = async (url: string) => {
-    const response = await fetch(url);
-    const rawContent = await response.text();
-    const $ = cheerio.load(rawContent);
-    const nodes = $('div.titlebar-title.titlebar-title-lg');
-    return { name: nodes.text() };
-}
+import { setGlobalDispatcher } from "undici";
+import { describe, expect, it } from "vitest";
+import { allocineClientMockAgent } from "./allocine-client-mock";
+import { getCoCastMembers, retrieveCastingFromId, retrieveFilmographyFromId, retrieveFilmographyFromId2, retrieveNameFromActorUrl } from "./filmography";
 
 
-describe('Filmography ', () => {
-
-    it('should contain all movies', async () => {
-        // given
-        const id = '16349';
-        // when
-        const filmography = await retrieveFilmographyFromId(id);
-        // then
-        expect(filmography.length).toBeGreaterThan(20);
-
-    });
-
+describe("Filmography ", () => {
+  setGlobalDispatcher(allocineClientMockAgent);
+  it.only("should contain all movies", async () => {
+    // given
+    const id = "16349";
+    // when
+    const filmography = await retrieveFilmographyFromId(id);
+    const filmography2 = await retrieveFilmographyFromId2(id);
+    // then
+    expect(filmography.length).toBeGreaterThan(20);
+    expect(filmography).toEqual(expect.objectContaining(filmography2))
+  });
+  
 });
 
-describe('Casting', () => {
+describe("Casting", () => {
+  setGlobalDispatcher(allocineClientMockAgent);
+  it("should contain all actors", async () => {
+    // given
+    const movieId = "196208";
+    // when
+    const casting = await retrieveCastingFromId(movieId);
+    // then
+    expect(casting.length).toBeGreaterThan(6);
+  });
+});
 
-    it('should contain all actors', async () => {
-        // given
-        const movieId = '196208';
-        // when
-        const casting = await retrieveCastingFromId(movieId);
-        // then
-        expect(casting.length).toBeGreaterThan(6);
+describe("Actor page", () => {
+  setGlobalDispatcher(allocineClientMockAgent);
+  it("should contain actor information", async () => {
+    // given
+    const url =
+      "https://www.allocine.fr/personne/fichepersonne_gen_cpersonne=3073.html";
+    // when
+    const actorDescription = await retrieveNameFromActorUrl(url);
+    // then
+    expect(actorDescription.name).toBe("Harry Carey Jr.");
+  });
+});
 
-    });
-
+describe("Get CoCast", () => {
+  setGlobalDispatcher(allocineClientMockAgent);
+  it("should find first co-cast of first movie", async () => {
+    // given
+    const alloId = "16349";
+    
+    // when
+    const result = await getCoCastMembers(alloId);
+    // then
+    expect(result[0]).toBe("Alexandra Dean");
+    // expect(result[result.length - 1]).toBe("Alexandra Dean");
+  });
 });
 
 
-describe('Actor page', () => {
-
-    it('should contain actor information', async () => {
-        // given
-        const url = 'https://www.allocine.fr/personne/fichepersonne_gen_cpersonne=3073.html';
-        // when
-        const actorDescription = await retrieveNameFromActorUrl(url);
-        // then
-        expect(actorDescription.name).toBe('Harry Carey Jr.');
-
-    });
-
-});
+const expectedResults = [
+  "Alexandra Dean",
+  "G. David Schine",
+  "James R. Silke",
+  "Harry Keller",
+  "Hedy Lamarr",
+  "George Nader",
+  "Irwin Allen",
+  "Ronald Colman",
+  "Groucho Marx",
+  "Harpo Marx",
+  "Chico Marx",
+  "Virginia Mayo",
+  "Agnes Moorehead",
+  "Vincent Price",
+  "Marc Allégret",
+  "Edgar G. Ulmer",
+  "Massimo Serato",
+  "Cathy O'Donnell",
+  "Robert Beatty",
+  "Guido Celano",
+  "Enrico Glori",
+  "Gérard Oury",
+  "Richard O'Sullivan",
+  "Franco Coop",
+  "Cesare Danova",
+  "Mino Doro",
+  "Norman Z. McLeod",
+  "Bob Hope",
+  "Francis L. Sullivan",
+  "Frank Faylen",
+  "Joseph H. Lewis",
+  "John Farrow",
+  "Ray Milland",
+  "MacDonald Carey",
+  "Mona Freeman",
+  "Harry Carey Jr.",
+  "Taylor Holmes",
+  "Cecil B. DeMille",
+  "George Sanders",
+  "Victor Mature",
+  "Angela Lansbury",
+  "Henry Wilcoxon",
+  "Olive Deering",
+  "Fay Holden",
+  "Julia Faye",
+  "Robert Stevenson",
+  "Louis Hayward",
+  "Gene Lockhart",
+  "Hillary Brooke",
+  "Rhys Williams",
+  "Moroni Olsen",
+  "Richard Thorpe",
+  "Robert Walker",
+  "June Allyson",
+  "Carl Esmond",
+  "Ludwig Stossel",
+  "George Cleveland",
+  "Jacques Tourneur",
+  "George Brent",
+  "Paul Lukas",
+  "Albert Dekker",
+  "Jean Negulesco",
+  "Peter Lorre",
+  "Paul Henreid",
+  "Victor Francen",
+  "Sydney Greenstreet",
+  "Eduardo Ciannelli",
+  "Joseph Calleia",
+  "Steven Geray",
+  "Alexander Hall",
+  "Vincente Minnelli",
+  "William Powell",
+  "James Craig",
+  "Fay Bainter",
+  "Henry O'Neill",
+  "Spring Byington",
+  "Victor Fleming",
+  "Spencer Tracy",
+  "John Garfield",
+  "Frank Morgan",
+  "Akim Tamiroff",
+  "Sheldon Leonard",
+  "John Qualen",
+  "Donald Meek",
+  "King Vidor",
+  "Robert Young",
+  "Ruth Hussey",
+  "Charles Coburn",
+  "Van Heflin",
+  "Bonita Granville",
+  "Douglas Wood",
+  "Busby Berkeley",
+  "Robert Z. Leonard",
+  "Judy Garland",
+  "Lana Turner",
+  "Jackie Cooper",
+  "Charles Winninger",
+  "Clark Gable",
+  "Felix Bressart",
+  "Oscar Homolka",
+  "Eve Arden",
+  "Sig Ruman",
+  "Jack Conway",
+  "Claudette Colbert",
+  "Lionel Atwill",
+  "Chill Wills",
+  "John Cromwell",
+  "Charles Boyer",
+  "Alan Hale",
+  "Walter Kingsford",
+  "Stanley Fields",
+  "Charles D. Brown",
+  "Robert Greig",
+  "Gustav Machaty",
+  "Pierre Nay",
+  "Andre Nox",
+];

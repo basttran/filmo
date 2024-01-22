@@ -15,6 +15,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
     "cockatiel": "^3.1.1",
+    "fp-ts": "^2.16.2",
     "piscina": "^3.2.0",
     "undici": "^5.20.0"
   }
