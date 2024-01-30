@@ -31,14 +31,20 @@ export const retrieveFilmographyFromId = async (alloId: string) => {
 const toFilmographyUrl = (alloId: string) => `https://www.allocine.fr/personne/fichepersonne-${alloId}/filmographie/`
 
 const fetchFilmoFromUrl = (url: string) => TE.tryCatch(() => fetch((url)), () => `can't fetch filmo`)
-const getText = (response: Either<string, Response>) => response._tag === 'Right' ? TE.tryCatch(() => response.right.text(), () => `can't extract document`) : response
+const getText = (response: unknow) => TE.tryCatch(() => response.text(), () => `can't extract document`)
 
 
 export const retrieveFilmographyFromId2 = async (alloId: string) => {
-        const url = alloId
-    return pipe(
+    const task = pipe(
         alloId,
-        toFilmographyUrl)
+        toFilmographyUrl,
+        fetchFilmoFromUrl,
+        TE.chain(getText)
+        // fetchFilmoFromUrl,
+        // TE.map((response) => response.text()),
+        )
+
+        task()
 };
 
 
