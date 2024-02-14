@@ -1,12 +1,12 @@
 import { setGlobalDispatcher } from "undici";
 import { describe, expect, it } from "vitest";
 import { allocineClientMockAgent } from "./allocine-client-mock";
-import { getCoCastMembers, retrieveCastingFromId, retrieveFilmographyFromId, retrieveFilmographyFromId2, retrieveNameFromActorUrl } from "./filmography";
+import { getCoCastMembers, retrieveCastingFromId, retrieveCastingFromId2, retrieveFilmographyFromId, retrieveFilmographyFromId2, retrieveNameFromActorUrl, retrieveNameFromActorUrl2 } from "./filmography";
 
 
 describe("Filmography ", () => {
   setGlobalDispatcher(allocineClientMockAgent);
-  it.only("should contain all movies", async () => {
+  it("should contain all movies", async () => {
     // given
     const id = "16349";
     // when
@@ -26,8 +26,10 @@ describe("Casting", () => {
     const movieId = "196208";
     // when
     const casting = await retrieveCastingFromId(movieId);
+    const casting2 = await retrieveCastingFromId2(movieId);
     // then
     expect(casting.length).toBeGreaterThan(6);
+    expect(casting).toEqual(expect.objectContaining(casting))
   });
 });
 
@@ -39,8 +41,10 @@ describe("Actor page", () => {
       "https://www.allocine.fr/personne/fichepersonne_gen_cpersonne=3073.html";
     // when
     const actorDescription = await retrieveNameFromActorUrl(url);
+    const actorDescription2 = await retrieveNameFromActorUrl2(url);
     // then
     expect(actorDescription.name).toBe("Harry Carey Jr.");
+    expect(actorDescription.name).toBe(actorDescription2.name);
   });
 });
 
